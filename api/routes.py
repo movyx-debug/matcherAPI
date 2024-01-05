@@ -1,8 +1,8 @@
 import json
 from flask import Response, jsonify, request
 import numpy as np
-from app import app
-from app.funtions import get_ParameterListeTest, matchRating
+from api import app
+from api.funtions import get_ParameterListeTest, matchRating
 
 @app.route('/')
 def index():

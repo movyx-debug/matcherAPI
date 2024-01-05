@@ -13,4 +13,4 @@ engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'] , pool_pre_ping=Tru
 
 app.config['JSON_AS_ASCII'] = False
 
-from app import routes
+from api import routes
