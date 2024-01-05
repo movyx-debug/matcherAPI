@@ -199,7 +199,10 @@ def matchRating(name, goae):
             betaPoints = betaPoints + max(synonym_scores)*beta_scale
 
             deltaPoints = deltaPoints + bewerte_treffer(nameAddons, namestring)*delta_scale
-    
+
+            if betaPoints != 0 and (1 - alphaPoints/betaPoints) < 0.8:
+ 
+                betaPoints = 0 # wenn akzeptable Treffer für MainName und Synonyme gefunden werden, bewerte nur die Treffer für MainName
 
         epsilonPoints = 0
         # Überprüfen, ob die Liste leer ist, bevor die For-Schleife beginnt
