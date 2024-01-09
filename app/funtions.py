@@ -2,6 +2,7 @@ import numpy as np
 from app import engine
 import pandas as pd
 import re
+import Levenshtein
 
 # Dataframe beinhaltet alle Parameter aus der Datenbank
 def get_ParameterListeTest():
@@ -94,6 +95,15 @@ def bewerte_treffer(string, substring):
 
     return treffer_punkte
 
+def bewerte_treffer_similarity(str1, str2):
+    distance = Levenshtein.distance(str1, str2)
+    if distance == 0: # perfect match
+        result = 1
+    else:
+        result = 1/distance
+    # Je niedriger die Distanz, desto ähnlicher sind die Strings
+    return result
+
 
     # Beispiel bewerte Treffer:
 
@@ -169,15 +179,32 @@ def matchRating(name, goae):
 
         #1 alpha
         mainName = score_Df.at[index,"Hauptparameter2"].lower() # singleString
+        clean_mainNameLower = (re.sub('[^a-zA-Z0-9<>ßäöü]+', ';', mainName)).lower().strip()
+        clean_mainNameLower_list = re.split(';', clean_mainNameLower)
 
         #2 beta
-        synonyms_list = score_Df.at[index,"Synonyme2"].lower().split(",") # List of Strings
+        synonyms_list = score_Df.at[index,"Synonyme2"].lower().split(",") # List of synonyms
         
         for value in [""]:
             while value in synonyms_list:
                 synonyms_list.remove(value)
 
+        clean_synonym_lower_substring_list=[]
+        for syn in synonyms_list:
+            clean_synonym_substring = (re.sub('[^a-zA-Z0-9<>ßäöü]+', ';', syn)).lower().strip()
+            clean_synonym_substring_list = re.split(';', clean_synonym_substring)
+            clean_synonym_lower_substring_list.append(clean_synonym_substring_list) # lists in list
+
         synonyms = " ".join(synonyms_list)
+
+        print("_______________________")
+        print("---")
+        print(parameter["name_strings"])
+        print("---")
+        print(clean_mainNameLower_list)
+        print("---")
+        print(clean_synonym_lower_substring_list)
+
 
         #4 delta
         nameAddons_list = score_Df.at[index,"Parameterzusatz"].lower().split(",") # List of Strings
@@ -198,12 +225,17 @@ def matchRating(name, goae):
         deltaPoints = 0
 
         for namestring in parameter["name_strings"]:
-            
-            alphaPoints = alphaPoints + bewerte_treffer(mainName, namestring)*alpha_scale
 
+            for mainNameString in clean_mainNameLower_list:
+            
+                alphaPoints = alphaPoints + bewerte_treffer(mainNameString, namestring)*alpha_scale
+
+            synonym_score = 0
             synonym_scores=[0]
-            for synonym in synonyms_list:
-                synonym_score = bewerte_treffer(synonym, namestring)
+            for synonyms in clean_synonym_lower_substring_list:
+                for synonymString in synonyms:
+                    synonym_score = synonym_score + bewerte_treffer(synonymString, namestring)
+
                 synonym_scores.append(synonym_score)
 
             betaPoints = betaPoints + max(synonym_scores)*beta_scale
@@ -213,7 +245,6 @@ def matchRating(name, goae):
         alphaAndBetaPoints = [alphaPoints, deltaPoints]
         max_index = alphaAndBetaPoints.index(max(alphaAndBetaPoints))
 
-        print(max_index)
         if max_index == 0:
             betaPoints = 0
         else:
