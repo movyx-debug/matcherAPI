@@ -132,11 +132,21 @@ def matchRating(name, goae):
         direct_match = None
     
     #Punktesystem per hit
-    alpha_scale=1
-    beta_scale=1
-    gamma_scale=0.5
-    delta_scale=0.1
-    epsilon_scale=0.1
+    
+    anzahl_namestrings = len(parameter["name_strings"])
+    anzahl_materialstrings = len(parameter["material_strings"])
+
+    if anzahl_namestrings == 0:
+        anzahl_namestrings = 1
+    
+    if anzahl_materialstrings == 0:
+        anzahl_materialstrings = 1
+
+    alpha_scale=1 / anzahl_namestrings
+    beta_scale=1 / anzahl_namestrings
+    gamma_scale=0.5 
+    delta_scale=0.1 / anzahl_namestrings
+    epsilon_scale=0.1 / anzahl_materialstrings
 
     #Score-df
     score_Df["ratingscore_alpha_mainName"] = 0
@@ -200,9 +210,14 @@ def matchRating(name, goae):
 
             deltaPoints = deltaPoints + bewerte_treffer(nameAddons, namestring)*delta_scale
 
-            if betaPoints != 0 and (1 - alphaPoints/betaPoints) < 0.8:
- 
-                betaPoints = 0 # wenn akzeptable Treffer für MainName und Synonyme gefunden werden, bewerte nur die Treffer für MainName
+        alphaAndBetaPoints = [alphaPoints, deltaPoints]
+        max_index = alphaAndBetaPoints.index(max(alphaAndBetaPoints))
+
+        print(max_index)
+        if max_index == 0:
+            betaPoints = 0
+        else:
+            alphaPoints = 0
 
         epsilonPoints = 0
         # Überprüfen, ob die Liste leer ist, bevor die For-Schleife beginnt
@@ -223,9 +238,6 @@ def matchRating(name, goae):
         score_Df.at[index, "ratingscore_gamma_goae"] = 0
         score_Df.at[index, "ratingscore_delta_nameAddon"] = deltaPoints
         score_Df.at[index, "ratingscore_epsilon_material"] = epsilonPoints
-
-        score_Df.at[index, "TotalRatingOhneMat"] = alphaPoints + betaPoints + deltaPoints
-        score_Df.at[index, "TotalRating"] = alphaPoints + betaPoints + deltaPoints + epsilonPoints
 
     if goae_matches is not None:
         for parameterID in goae_matches:
