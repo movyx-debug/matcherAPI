@@ -2,7 +2,7 @@ import numpy as np
 from app import engine
 import pandas as pd
 import re
-import Levenshtein
+import difflib
 
 # Dataframe beinhaltet alle Parameter aus der Datenbank
 def get_ParameterListeTest():
@@ -24,6 +24,7 @@ def finde_vier_zahlen(s):
         return None
     
 def säubere_parameter(name, hasMaterialInItsName=False):
+    # Funktion identifiziert die "name_strings" und "material_strings" und erstellt das Dictionairy parameter
 
     parameter = {
          "name_strings": [],
@@ -83,57 +84,105 @@ def säubere_parameter(name, hasMaterialInItsName=False):
 
     return parameter
 
-def bewerte_treffer(string, substring):
-    if substring not in string:
-        return 0  # Keine Punkte, wenn keine Übereinstimmung
+def ratcliff_obershelp_similarity(str1, str2):
+    # gibt die Stringähnlichkeit wieder (MaxValue = 1)
+    # kommt dann zum Einsatz wenn für mehrere Parameter ein identischer RatingScore vorliegt --> gibt finale Einschätzung welcher Parameter am ähnlichsten ist
+    return difflib.SequenceMatcher(None, str1, str2).ratio()
 
-    länge_treffer = len(substring)
-    länge_gesamt_string = len(string)
+def separate_integers_and_others(list1, list2):
+    # Hilfsfunktion zu identifizierung von "Integern" im gesuchten Parameternamen. Separiert die Strings in 2 Listen.
+    list1_onlyInt = [item for item in list1 if item.isdigit()]
+    list2_onlyInt = [item for item in list2 if item.isdigit()]
+    list1_noInt = [item for item in list1 if not item.isdigit()]
+    list2_noInt = [item for item in list2 if not item.isdigit()]
 
-    # Berechnen der Punktzahl, wobei 1 erreicht wird, wenn der gesamte String dem Substring entspricht
-    treffer_punkte = länge_treffer / länge_gesamt_string
+    return list1_onlyInt, list1_noInt, list2_onlyInt, list2_noInt
 
-    return treffer_punkte
-
-def bewerte_treffer_similarity(str1, str2):
-    distance = Levenshtein.distance(str1, str2)
-    if distance == 0: # perfect match
-        result = 1
+def get_norm_factor(items):
+    # Hilfsfunktion da der Normierungsfaktor (Divisor) nicht null sein darf, wenn z.B. kein Element in der Liste vorliegt.
+    if len(items) == 0:
+        return 1
     else:
-        result = 1/distance
-    # Je niedriger die Distanz, desto ähnlicher sind die Strings
-    return result
+        return len(items)
+
+def is_integer_string(s):
+        return s.isdigit()
+
+def compare_integer_strings(list1, list2):
+    # Überprüfen, ob eine der Listen leer ist
+    if not list1 or not list2:
+        return False
+
+    # Filtern der Listen, um nur Integer-Strings zu behalten
+    filtered_list1 = [item for item in list1 if is_integer_string(item)]
+    filtered_list2 = [item for item in list2 if is_integer_string(item)]
+
+    # Überprüfen, ob die gefilterte erste Liste leer ist
+    if not filtered_list1:
+        return False
+
+    # Überprüfen, ob alle Elemente der gefilterten ersten Liste in der gefilterten zweiten Liste in der gleichen Reihenfolge erscheinen
+    # Integer-Strings werden abweichend von den restlichen Strings anders bewertet. Nur falls die Zahlenreihenfolge im gesuchten und im Datebank-String vorliegt werden RatingPunkte erzielt.
+    iter_filtered_list2 = iter(filtered_list2)
+    return all(item in iter_filtered_list2 for item in filtered_list1)
+
+def rateHit(userStringList, databaseStringList, scaleForIntegers = 0.3):
+    #Hauptfunktion
+    #Funktion zur Bewertung der Übereinstimmung der vorhandenen Parameterstrings zwischen 2 Listen
+
+    userStringList_Integers, userStringList_Others, databaseStringList_Integers, databaseStringList_Others = separate_integers_and_others(userStringList, databaseStringList)
+
+    normFactorUser_others = get_norm_factor(userStringList_Others)
+    normFactorDatabase_others = get_norm_factor(databaseStringList_Others)
+
+    #Normierungsfaktor entspricht immer der maximalen Elemente-anzahl innerhalb des Vergleichs
+    normFactor = max([normFactorUser_others, normFactorDatabase_others])
+
+    points=0
 
 
-    # Beispiel bewerte Treffer:
+    # Rating zwischen allen Substrings (Datenbank vs. Userinput) die NICHT IntegerStrings darstellen
+    for databaseString in databaseStringList_Others:
 
-    # Testen der Funktion mit verschiedenen Strings
-    strings = ["ing", "ving", "loving", "caving sol", "Abcehthaingok für, hallo adsasdasdassdsad"]
-    substring = "ing"
+        for userString in userStringList_Others:
 
-    # Bewertung jedes Ausdrucks
-    bewertungen = {string: bewerte_treffer(string, substring) for string in strings}
+            if userString in databaseString:
+                
+                länge_treffer = len(userString)
+                länge_gesamt_string = len(databaseString)
+                treffer_punkte = länge_treffer / länge_gesamt_string
 
-    #{'ing': 1.0, 'ving': 0.75, 'loving': 0.5, 'caving sol': 0.3, 'Abcehthaingok für, hallo adsasdasdassdsad': 0.07317073170731707}
+                points = points + treffer_punkte 
 
-    #bewerte_treffer("loving", "ing")
-
-    #0.5
+    if userStringList_Integers:
+        #Falls im UserInput separierte Integer vorliegen, wird der normFactor um 1 erhöht, da nun ein einzelner zusätzlicher Abgleich dieser Integer mit der Datenbank stattfindet
+        normFactor = normFactor + 1
+    
+        if compare_integer_strings(userStringList_Integers, databaseStringList_Integers) == True:
+            #überprüft ob die gleiche Integerreihenfolge gemäß Userinput auch in der Datenbank vorliegt
+            points = points + scaleForIntegers
+                    
+    return points / normFactor
 
     
 def matchRating(name, goae):
 
-    score_Df = get_ParameterListeTest()
-    directmatchDF = get_ParameterMatrix()
 
-    goae_single = finde_vier_zahlen(goae)
-    parameter = säubere_parameter(name)
+    # Abruf benötigter Informationen aus der UBCDatenbank
+    score_Df = get_ParameterListeTest() # alle Parameter und alle Infos
+    directmatchDF = get_ParameterMatrix() # alle Directmatchstrings
 
+    goae_single = finde_vier_zahlen(goae) # separiere GOÄ (4-stellig) von restlichen ggf. vorliegenden Zeichen
+    parameter = säubere_parameter(name) # identifiziere name- und material-Strings und directMatchString
+
+    # GOÄ-Matches
     goae_matches_result = score_Df[score_Df["goaeSingle"] == goae_single]
     if not goae_matches_result.empty:
         goae_matches = goae_matches_result['ID'].values
     else:
         goae_matches = None
+
+    #Direct-Match
 
     direct_match_result = directmatchDF[directmatchDF["DirektMatch"] == parameter["direct_match_string"]]
     if not direct_match_result.empty:
@@ -141,24 +190,15 @@ def matchRating(name, goae):
     else:
         direct_match = None
     
-    #Punktesystem per hit
-    
-    anzahl_namestrings = len(parameter["name_strings"])
-    anzahl_materialstrings = len(parameter["material_strings"])
-
-    if anzahl_namestrings == 0:
-        anzahl_namestrings = 1
-    
-    if anzahl_materialstrings == 0:
-        anzahl_materialstrings = 1
-
-    alpha_scale=1 / anzahl_namestrings
-    beta_scale=1 / anzahl_namestrings
+    #Punktesystem (Scale)
+        
+    alpha_scale=1
+    beta_scale=1
     gamma_scale=0.5 
-    delta_scale=0.1 / anzahl_namestrings
-    epsilon_scale=0.1 / anzahl_materialstrings
+    delta_scale=0.1
+    epsilon_scale=0.1
 
-    #Score-df
+    #Im Dataframe (enthält alle Informationen aus der UBC Datenbank) werden Spalten für das MatchRating erzeugt:
     score_Df["ratingscore_alpha_mainName"] = 0
     score_Df["ratingscore_beta_synonym"] = 0
     score_Df["ratingscore_gamma_goae"] = 0
@@ -168,122 +208,137 @@ def matchRating(name, goae):
     score_Df["TotalRatingOhneMat"] = 0
     score_Df["TotalRating"] = 0
 
+    score_Df["RatcliffSimilarity"] = 0
+
+    # Loop durch die gesamte Datenbank:
 
     for index in range(0, len(score_Df)):
-        #Defining searchable Strings from Database:
+    #--------------------Präparation-----------------------
 
-        displayName = score_Df.at[index,"Name"]
-
-        clean_displayNameLower = (re.sub('[^a-zA-Z0-9<>ßäöü]+', ';', displayName)).lower().strip()
-        clean_displayNameLower_list = re.split(';', clean_displayNameLower)
-
-        #1 alpha
+        #1 alpha (Strings für mainName)
         mainName = score_Df.at[index,"Hauptparameter2"].lower() # singleString
         clean_mainNameLower = (re.sub('[^a-zA-Z0-9<>ßäöü]+', ';', mainName)).lower().strip()
         clean_mainNameLower_list = re.split(';', clean_mainNameLower)
 
-        #2 beta
+        for value in [""]:
+            while value in clean_mainNameLower_list:
+                clean_mainNameLower_list.remove(value)
+
+        #2 beta (Strings für Synonyme)
         synonyms_list = score_Df.at[index,"Synonyme2"].lower().split(",") # List of synonyms
-        
         for value in [""]:
             while value in synonyms_list:
                 synonyms_list.remove(value)
-
         clean_synonym_lower_substring_list=[]
         for syn in synonyms_list:
             clean_synonym_substring = (re.sub('[^a-zA-Z0-9<>ßäöü]+', ';', syn)).lower().strip()
             clean_synonym_substring_list = re.split(';', clean_synonym_substring)
             clean_synonym_lower_substring_list.append(clean_synonym_substring_list) # lists in list
-
-        synonyms = " ".join(synonyms_list)
-
-        print("_______________________")
-        print("---")
-        print(parameter["name_strings"])
-        print("---")
-        print(clean_mainNameLower_list)
-        print("---")
-        print(clean_synonym_lower_substring_list)
+        for value in [""]:
+            while value in clean_synonym_lower_substring_list:
+                clean_synonym_lower_substring_list.remove(value)
 
 
-        #4 delta
+        #4 delta (Strings für ParameterAddon)
         nameAddons_list = score_Df.at[index,"Parameterzusatz"].lower().split(",") # List of Strings
         for value in [""]:
             while value in nameAddons_list:
                 nameAddons_list.remove(value)
 
-        nameAddons = " ".join(nameAddons_list)
 
-        #5 epsilon
+        #5 epsilon (Strings für Material)
         material = score_Df.at[index,"Material"].lower() # singleString
+        clean_materialLower = (re.sub('[^a-zA-Z0-9<>ßäöü]+', ';', material)).lower().strip()
+        clean_materialLower_list = re.split(';', clean_materialLower)
+        for value in [""]:
+            while value in clean_materialLower_list:
+                clean_materialLower_list.remove(value)
 
-        #Start Matchrating:
+        #Relevant für String-Similairity
+        displayName = score_Df.at[index,"Name"] 
+        clean_displayNameLower = (re.sub('[^a-zA-Z0-9<>ßäöü]+', ';', displayName)).lower().strip()
+        clean_displayNameLower_list = re.split(';', clean_displayNameLower)        
 
-        # look for namestrings (alpha, beta, delta)
-        alphaPoints = 0
-        betaPoints = 0
-        deltaPoints = 0
+        synonyms_list_displayName = []
+        for synonym in synonyms_list:
+            if "im" not in clean_displayNameLower_list and "liquor" not in clean_displayNameLower_list and "urin" not in clean_displayNameLower_list:
+                synonym_displayName = synonym + " " + score_Df.at[index,"Parameterzusatz"]
+            else:
+                synonym_displayName = synonym + " " + score_Df.at[index,"Parameterzusatz"] + " " + score_Df.at[index,"Material"]
 
-        for namestring in parameter["name_strings"]:
+            synonyms_list_displayName.append(synonym_displayName)
 
-            for mainNameString in clean_mainNameLower_list:
-            
-                alphaPoints = alphaPoints + bewerte_treffer(mainNameString, namestring)*alpha_scale
+    #--------------------Matching-----------------------
 
-            synonym_score = 0
-            synonym_scores=[0]
-            for synonyms in clean_synonym_lower_substring_list:
-                for synonymString in synonyms:
-                    synonym_score = synonym_score + bewerte_treffer(synonymString, namestring)
+        alphaPoints = 0 #mainName
+        betaPoints = 0 #Synonyms
+        deltaPoints = 0 #NameAddon
+        epsilonPoints = 0 #Material
 
-                synonym_scores.append(synonym_score)
+        #alphaPoints (Vergleich der UserInputStrings mit dem MainName aus Datenbank)
+        alphaPoints = rateHit(parameter["name_strings"], clean_mainNameLower_list, scaleForIntegers=0.3)*alpha_scale
 
-            betaPoints = betaPoints + max(synonym_scores)*beta_scale
+        #betaPoints (Vergleich der UserInputStrings mit mehreren Synonymen aus Datenbank --> Bester Punktwert für spezifisches Synonym wird herangezogen)
+        synonym_scores=[0]
+        for synonyms in clean_synonym_lower_substring_list:
+            synonym_score = rateHit(parameter["name_strings"], synonyms, scaleForIntegers=0.3)*beta_scale
+            synonym_scores.append(synonym_score)
+        betaPoints = max(synonym_scores)
 
-            deltaPoints = deltaPoints + bewerte_treffer(nameAddons, namestring)*delta_scale
-
-        alphaAndBetaPoints = [alphaPoints, deltaPoints]
+        #alpha+betaPoints (es wird lediglich die max. Punktzahl (MainName vs. Synonyms) gewertet)
+        alphaAndBetaPoints = [alphaPoints, betaPoints]
         max_index = alphaAndBetaPoints.index(max(alphaAndBetaPoints))
-
         if max_index == 0:
             betaPoints = 0
         else:
             alphaPoints = 0
 
-        epsilonPoints = 0
-        # Überprüfen, ob die Liste leer ist, bevor die For-Schleife beginnt
+        #deltaPoints (Vergleich der UserInputStrings mit dem NameAddon aus Datenbank --> alle Parameter bekommen Punkte gemäß delta_scale)
+        #Lediglich wenn ein ParameterAddon in der Datenbank vorliegt und dieses nicht gemäß UserInput gehitted wird, werden 0 Punkte vergeben
+        deltaPoints = delta_scale
+        if len(nameAddons_list) != 0 and rateHit(parameter["name_strings"], nameAddons_list, scaleForIntegers=0.3) == 0:
+            deltaPoints = 0
+
+        #epsilonPoints (Vergleich der UserInputStrings mit dem Material aus Datenbank)
+
+        # Überprüfen, ob die Liste leer ist (ob eine MaterialAngabe vom User existiert), bevor die For-Schleife beginnt
         if parameter["material_strings"]:
-
-            for materialstring in parameter["material_strings"]:
-
-                epsilonPoints = epsilonPoints + bewerte_treffer(material, materialstring)*epsilon_scale
-        
+            epsilonPoints = rateHit(parameter["material_strings"], clean_materialLower_list, scaleForIntegers=0.3)*epsilon_scale
+        #Falls keine Materialangabe vorliegt, werden jene Parameter aus der Datenbank mit Punkten bewertet die dem "StandardMaterial" entsprechen, wo i.d.R. eine Materialangabe überflüssig ist
         else:
             if "im" not in clean_displayNameLower_list and "liquor" not in clean_displayNameLower_list and "urin" not in clean_displayNameLower_list:
                 epsilonPoints = epsilon_scale
 
+        #StringSimilairity
+        namesForStringCompare = synonyms_list_displayName
+        namesForStringCompare.append(displayName)
+        ratcliffScores = [ratcliff_obershelp_similarity(name, displayDatabaseString) for displayDatabaseString in namesForStringCompare]
+        ratcliffScore = max(ratcliffScores)
 
-
+    #--------------------Finale Scores-----------------------
+    #SetRatings im Dataframe:
         score_Df.at[index, "ratingscore_alpha_mainName"] = alphaPoints
         score_Df.at[index, "ratingscore_beta_synonym"] = betaPoints
         score_Df.at[index, "ratingscore_gamma_goae"] = 0
         score_Df.at[index, "ratingscore_delta_nameAddon"] = deltaPoints
         score_Df.at[index, "ratingscore_epsilon_material"] = epsilonPoints
+        score_Df.at[index, "RatcliffSimilarity"] = ratcliffScore
 
     if goae_matches is not None:
         for parameterID in goae_matches:
             score_Df.loc[score_Df['ID'] == parameterID, 'ratingscore_gamma_goae'] = gamma_scale
         
+    #Kalkulation von Gesamtpunkten (Summen aus den Detailratings)
     score_Df["TotalRatingOhneGOAE"] = score_Df["ratingscore_alpha_mainName"] + score_Df["ratingscore_beta_synonym"] + score_Df["ratingscore_delta_nameAddon"] + score_Df["ratingscore_epsilon_material"]
-
     score_Df["TotalRating"] = score_Df["ratingscore_alpha_mainName"] + score_Df["ratingscore_beta_synonym"] + score_Df["ratingscore_delta_nameAddon"] + score_Df["ratingscore_epsilon_material"] + score_Df["ratingscore_gamma_goae"]
 
-
-    score_Df_sorted=score_Df.sort_values(by="TotalRating", ascending=False)
+    #--------------------Sorting-----------------------
+    #Sortieren des Dataframes nach (1) TotalRating & (2) RatcliffSimilarity
+    score_Df_sorted=score_Df.sort_values(by=["TotalRating", "RatcliffSimilarity"], ascending=False)
     score_Df_sorted = score_Df_sorted.reset_index(drop=True)
-    pd.set_option('display.max_columns', None)  # Keine Begrenzung für Spalten
 
-
+    #--------------------Return/output-----------------------
+    #Grundgerüst für return/output
     json = {
         "input" : {
             "name" : None,
@@ -296,6 +351,7 @@ def matchRating(name, goae):
         }
     }
 
+    #Filling:
     json["input"]["name"] = name
     json["input"]["goae"] = goae
     json["output"]["directMatchID"] = direct_match
@@ -311,12 +367,10 @@ def matchRating(name, goae):
         parameterDisplayName = score_Df_sorted.at[i, "Name"]
         parameterDisplayGoae = score_Df_sorted.at[i, "goae"]
 
-
         ratingInfo = {}
         ratingInfo["parameterID"] = parameterID
         ratingInfo["DisplayName"] = parameterDisplayName
         ratingInfo["parameterDisplayGoae"] = parameterDisplayGoae
-
         ratingInfo["correctMatchPropability"] = "InWork"
         ratingInfo["ratingScoreTotal"] = score_Df_sorted.at[i, "TotalRating"]
         ratingInfo["ratingScoreWithoutGoae"] = score_Df_sorted.at[i, "TotalRatingOhneGOAE"]
@@ -327,14 +381,14 @@ def matchRating(name, goae):
         ratingInfoDetail["ratingscore_gamma_goae"] = score_Df_sorted.at[i, "ratingscore_gamma_goae"]
         ratingInfoDetail["ratingscore_delta_nameAddon"] = score_Df_sorted.at[i, "ratingscore_delta_nameAddon"]
         ratingInfoDetail["ratingscore_epsilon_material"] = score_Df_sorted.at[i, "ratingscore_epsilon_material"]
-
+        ratingInfoDetail["RatcliffSimilarity"] = score_Df_sorted.at[i, "RatcliffSimilarity"]
 
         ratingInfo["ScoreDetail"] = ratingInfoDetail
         ratingInfos.append(ratingInfo)
 
     json["output"]["ratingInfos"] = ratingInfos
     
-
+    #converting type64 to INT
     def convert_int64(obj):
         if isinstance(obj, dict):
             return {k: convert_int64(v) for k, v in obj.items()}
@@ -347,5 +401,4 @@ def matchRating(name, goae):
 
     converted_json = convert_int64(json)
     
-
     return converted_json
