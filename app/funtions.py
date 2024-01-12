@@ -1,9 +1,12 @@
+from datetime import datetime
 import numpy as np
 from app import engine
 import pandas as pd
 import re
 import difflib
 import time
+from functools import lru_cache
+from sqlalchemy import text
 
 # Dataframe beinhaltet alle Parameter aus der Datenbank
 def get_ParameterListeTest():
@@ -13,6 +16,55 @@ def get_ParameterListeTest():
 def get_ParameterMatrix():
     ParameterMatrix = pd.read_sql("SELECT * from parameterMatrix", con=engine)
     return ParameterMatrix
+
+#caching der Datenbankabfragen --> wird neugeladen wenn "is_data_updated() True ergibt"
+@lru_cache(maxsize=None)
+def get_cached_parameterListeTest():
+    return get_ParameterListeTest()
+
+@lru_cache(maxsize=None)
+def get_cached_parameterMatrix():
+    return get_ParameterMatrix()
+
+def is_data_updated():
+    with engine.connect() as connection:
+        result = connection.execute(text("""
+            SELECT UPDATE_TIME
+            FROM   information_schema.tables
+            WHERE  TABLE_SCHEMA = 'ubcdata'
+            AND    TABLE_NAME = 'parameterListeTest';
+        """))
+        update_time = result.fetchone()[0]
+        if update_time is not None:
+            last_update_time = load_last_check_timestamp()
+            if update_time > last_update_time:
+                save_last_check_timestamp(update_time)                
+                return update_time > last_update_time
+            
+            else:
+                return False
+            
+        else:
+            return False
+
+def save_last_check_timestamp(timestamp):
+    with open("timestamp.txt", "w") as file:
+        file.write(str(timestamp))
+
+def load_last_check_timestamp():
+    try:
+        with open("timestamp.txt", "r") as file:
+            return datetime.fromisoformat(file.read())
+    except FileNotFoundError:
+        return datetime.fromisoformat("2023-04-05T15:42:00.123456")
+    
+def check_for_database_reload():
+    if is_data_updated():
+        get_cached_parameterListeTest.cache_clear()  # Cache leeren
+        get_cached_parameterMatrix.cache_clear()  # Cache leeren
+
+        get_cached_parameterListeTest()
+        get_cached_parameterMatrix()
 
 def finde_vier_zahlen(s):
     if s == None:
@@ -26,7 +78,6 @@ def finde_vier_zahlen(s):
     
 def säubere_parameter(name, hasMaterialInItsName=False):
     # Funktion identifiziert die "name_strings" und "material_strings" und erstellt das Dictionairy parameter
-
     parameter = {
          "name_strings": [],
          "material_strings": [],
@@ -171,9 +222,12 @@ def rateHit(userStringList, databaseStringList, scaleForIntegers = 0.3):
 def matchRating(name, goae):
 
     start_time = time.time()
+
+    check_for_database_reload()
+
     # Abruf benötigter Informationen aus der UBCDatenbank
-    score_Df = get_ParameterListeTest() # alle Parameter und alle Infos
-    directmatchDF = get_ParameterMatrix() # alle Directmatchstrings
+    score_Df = get_cached_parameterListeTest() # alle Parameter und alle Infos
+    directmatchDF = get_cached_parameterMatrix() # alle Directmatchstrings
 
     goae_single = finde_vier_zahlen(goae) # separiere GOÄ (4-stellig) von restlichen ggf. vorliegenden Zeichen
     parameter = säubere_parameter(name) # identifiziere name- und material-Strings und directMatchString
