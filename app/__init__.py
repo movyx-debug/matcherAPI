@@ -1,9 +1,13 @@
 from flask import Flask
 import os
 from sqlalchemy import create_engine
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 
+
+API_KEY = os.environ.get('MY_API_KEY')
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SECRET_KEY'] = '123asd46fsaFSD462448fsdf46484FS"$§§"$4654FDfds"'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://marcelcouturier:Lm428xpX1z@167.172.178.230/ubcdata'

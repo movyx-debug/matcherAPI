@@ -1,9 +1,20 @@
 import json
-from flask import Response, jsonify, request
-from app import app
-from app.funtions import get_ParameterListeTest, matchRating
+from flask import Response, request, abort
+from functools import wraps
+from app import app, API_KEY
+from app.funtions import matchRating
+
+def require_apikey(view_function):
+    @wraps(view_function)
+    def decorated_function(*args, **kwargs):
+        if request.headers.get('X-API-KEY') and request.headers.get('X-API-KEY') == API_KEY:
+            return view_function(*args, **kwargs)
+        else:
+            abort(401)  # Unauthorized access
+    return decorated_function
 
 @app.route('/')
+@require_apikey
 def index():
     # url = /?name=asdqwe&goae=4567
     name = request.args.get('name', default=None, type=str)
