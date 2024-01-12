@@ -3,6 +3,7 @@ from app import engine
 import pandas as pd
 import re
 import difflib
+import time
 
 # Dataframe beinhaltet alle Parameter aus der Datenbank
 def get_ParameterListeTest():
@@ -85,6 +86,8 @@ def säubere_parameter(name, hasMaterialInItsName=False):
     return parameter
 
 def ratcliff_obershelp_similarity(str1, str2):
+    if str1 is None or str2 is None:
+        return 0
     # gibt die Stringähnlichkeit wieder (MaxValue = 1)
     # kommt dann zum Einsatz wenn für mehrere Parameter ein identischer RatingScore vorliegt --> gibt finale Einschätzung welcher Parameter am ähnlichsten ist
     return difflib.SequenceMatcher(None, str1, str2).ratio()
@@ -167,13 +170,17 @@ def rateHit(userStringList, databaseStringList, scaleForIntegers = 0.3):
     
 def matchRating(name, goae):
 
-
+    start_time = time.time()
     # Abruf benötigter Informationen aus der UBCDatenbank
     score_Df = get_ParameterListeTest() # alle Parameter und alle Infos
     directmatchDF = get_ParameterMatrix() # alle Directmatchstrings
 
     goae_single = finde_vier_zahlen(goae) # separiere GOÄ (4-stellig) von restlichen ggf. vorliegenden Zeichen
     parameter = säubere_parameter(name) # identifiziere name- und material-Strings und directMatchString
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Zeit Datenbankabfrage: {execution_time} Sekunden")
 
     # GOÄ-Matches
     goae_matches_result = score_Df[score_Df["goaeSingle"] == goae_single]
@@ -199,18 +206,23 @@ def matchRating(name, goae):
     epsilon_scale=0.1
 
     #Im Dataframe (enthält alle Informationen aus der UBC Datenbank) werden Spalten für das MatchRating erzeugt:
-    score_Df["ratingscore_alpha_mainName"] = 0
-    score_Df["ratingscore_beta_synonym"] = 0
-    score_Df["ratingscore_gamma_goae"] = 0
-    score_Df["ratingscore_delta_nameAddon"] = 0
-    score_Df["ratingscore_epsilon_material"] = 0
+    score_Df["ratingscore_alpha_mainName"] = 0.0
+    score_Df["ratingscore_beta_synonym"] = 0.0
+    score_Df["ratingscore_gamma_goae"] = 0.0
+    score_Df["ratingscore_delta_nameAddon"] = 0.0
+    score_Df["ratingscore_epsilon_material"] = 0.0
 
-    score_Df["TotalRatingOhneMat"] = 0
-    score_Df["TotalRating"] = 0
+    score_Df["TotalRatingOhneMat"] = 0.0
+    score_Df["TotalRating"] = 0.0
 
-    score_Df["RatcliffSimilarity"] = 0
+    score_Df["RatcliffSimilarity"] = 0.0
 
     # Loop durch die gesamte Datenbank:
+
+
+    start_time = time.time()
+    
+
 
     for index in range(0, len(score_Df)):
     #--------------------Präparation-----------------------
@@ -327,7 +339,11 @@ def matchRating(name, goae):
     if goae_matches is not None:
         for parameterID in goae_matches:
             score_Df.loc[score_Df['ID'] == parameterID, 'ratingscore_gamma_goae'] = gamma_scale
-        
+    
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Zeit Loop Params: {execution_time} Sekunden")
+
     #Kalkulation von Gesamtpunkten (Summen aus den Detailratings)
     score_Df["TotalRatingOhneGOAE"] = score_Df["ratingscore_alpha_mainName"] + score_Df["ratingscore_beta_synonym"] + score_Df["ratingscore_delta_nameAddon"] + score_Df["ratingscore_epsilon_material"]
     score_Df["TotalRating"] = score_Df["ratingscore_alpha_mainName"] + score_Df["ratingscore_beta_synonym"] + score_Df["ratingscore_delta_nameAddon"] + score_Df["ratingscore_epsilon_material"] + score_Df["ratingscore_gamma_goae"]
