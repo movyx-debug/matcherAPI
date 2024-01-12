@@ -226,7 +226,8 @@ def matchRating(name, goae):
     check_for_database_reload()
 
     # Abruf benötigter Informationen aus der UBCDatenbank
-    score_Df = get_cached_parameterListeTest() # alle Parameter und alle Infos
+    df = get_cached_parameterListeTest() # alle Parameter und alle Infos
+    score_Df = df.copy()
     directmatchDF = get_cached_parameterMatrix() # alle Directmatchstrings
 
     goae_single = finde_vier_zahlen(goae) # separiere GOÄ (4-stellig) von restlichen ggf. vorliegenden Zeichen

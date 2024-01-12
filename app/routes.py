@@ -2,7 +2,7 @@ import json
 from flask import Response, request, abort
 from functools import wraps
 from app import app, API_KEY
-from app.funtions import matchRating
+from app.funtions import check_for_database_reload, get_cached_parameterListeTest, matchRating
 
 def require_apikey(view_function):
     @wraps(view_function)
@@ -25,5 +25,15 @@ def index():
     
     # Erstellen der Response mit dem korrekten Content-Type und Charset
     response = Response(json_data, content_type="application/json; charset=utf-8")
+    return response
+
+@app.route('/params')
+@require_apikey
+def params():
+    check_for_database_reload()
+    result = get_cached_parameterListeTest().to_json(orient='records')
+    
+    # Erstellen der Response mit dem korrekten Content-Type und Charset
+    response = Response(result, content_type="application/json; charset=utf-8")
     return response
     
