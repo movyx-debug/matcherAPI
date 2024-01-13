@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UBC Matching API Dokumentation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .api-title {
+            color: navy;
+        }
+        .api-section {
+            margin-bottom: 20px;
+        }
+        .api-subsection {
+            margin-bottom: 10px;
+        }
+        .api-description {
+            color: darkgreen;
+        }
+        .api-url, .api-request, .api-response {
+            color: darkblue;
+            font-weight: bold;
+        }
+        .api-json {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-family: monospace;
+        }
+        .copy-button {
+            cursor: pointer;
+            display: inline-block;
+            padding: 5px;
+            background-color: #e7e7e7;
+            border-radius: 5px;
+            margin-left: 10px;
+            border: none;
+            color: black;
+        }
+    </style>
+    <script>
+        function copyToClipboard(text) {
+            var tempInput = document.createElement("input");
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+        }
+    </script>
+</head>
+<body>
+
+<h1 class="api-title">UBC Matching API Dokumentation</h1>
+
+<div class="api-section">
+    <h2>Überblick</h2>
+    <p>Diese API ermöglicht es Nutzern, detaillierte Informationen über Laborparameter zu erhalten und spezifische Abfragen basierend auf Parameternamen und GOÄ-Ziffern durchzuführen.</p>
+</div>
+
+<div class="api-section">
+    <h2>Basis-URL</h2>
+    <span class="api-url">https://ubcmatchingapi.onrender.com/</span>
+    <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/')">Copy</button>
+</div>
+
+<div class="api-section">
+    <h2 class="api-subsection">Route 1: Parameter Matching</h2>
+    <h3 class="api-description">URL</h3>
+    <span class="api-url">GET https://ubcmatchingapi.onrender.com/</span>
+    <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/')">Copy</button>
+
+    <h3 class="api-description">Beschreibung</h3>
+    <p>Ermöglicht das Abrufen von Informationen zu einem spezifischen Laborparameter basierend auf seinem Namen und der zugehörigen GOÄ-Ziffer. Für diese Anfrage ist der API-Key erforderlich.</p>
+
+    <h3 class="api-description">Userinputvariablen</h3>
+    <ul>
+        <li><strong>name</strong> (String): Bezeichnung des gesuchten Laborparameters.</li>
+        <li><strong>goae</strong> (String): Bezeichnung der zugehörigen GOÄ-Ziffer.</li>
+    </ul>
+    <h3 class="api-description">Header-Beispiel</h3>
+    <p>X-API-KEY: IhrAPIKey</p>
+
+    <h3 class="api-description">Request-Beispiel</h3>
+    <span class="api-request">https://ubcmatchingapi.onrender.com/?name=BeispielName&goae=BeispielGoae</span>
+    <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/?name=BeispielName&goae=BeispielGoae')">Copy</button>
+
+    <h3 class="api-description">Response-Struktur</h3>
+    <div class="api-json">
+        Ein JSON-Objekt mit folgenden Eigenschaften:
+        <ul>
+            <li><strong>output</strong>: Ein Objekt mit Informationen zu den Suchergebnissen.</li>
+        </ul>
+    </div
+    <h3 class="api-description">Response-Beispiel</h3>
+    <div class="api-json">
+        {
+            "output": {
+                "directMatchID": null,
+                "directMatchDisplayName": null,
+                "ratingInfos": [
+                    // Beispiel-Einträge...
+                ]
+            }
+        }
+    </div>
+</div>
+<div class="api-section">
+    <h2 class="api-subsection">Route 2: Abrufen aller Parameter</h2>
+    <h3 class="api-description">URL</h3>
+    <span class="api-url">GET https://ubcmatchingapi.onrender.com/params</span>
+    <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/params')">Copy</button>
+    <h3 class="api-description">Beschreibung</h3>
+<p>Liefert eine Liste aller in der Datenbank gespeicherten Laborparameter. Für diese Anfrage ist der API-Key erforderlich.</p>
+<h3 class="api-description">Header-Beispiel</h3>
+    <p>X-API-KEY: IhrAPIKey</p>
+<h3 class="api-description">Request-Beispiel</h3>
+<span class="api-request">https://ubcmatchingapi.onrender.com/params</span>
+<button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/params')">Copy</button>
+
+<h3 class="api-description">Response-Struktur</h3>
+<div class="api-json">
+    Ein JSON-Array, in dem jedes Objekt einen Laborparameter repräsentiert. Jedes Objekt enthält verschiedene Felder wie <strong>ID</strong>, <strong>Name</strong>, <strong>Synonyme</strong>, etc.
+</div>
+
+<h3 class="api-description">Response-Beispiel</h3>
+<div class="api-json">
+    [
+        {
+            "ID": 1,
+            "Name": "17-Beta-Estradiol",
+            // Weitere Felder...
+        },
+        {
+            "ID": 2,
+            "Name": "ACE",
+            // Weitere Felder...
+        },
+        // Weitere Einträge...
+    ]
+</div>
+</div>
+</body>
+</html>

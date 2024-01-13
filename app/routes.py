@@ -1,5 +1,5 @@
 import json
-from flask import Response, request, abort
+from flask import Response, render_template, request, abort
 from functools import wraps
 from app import app, API_KEY
 from app.funtions import check_for_database_reload, get_cached_parameterListeTest, matchRating
@@ -37,3 +37,6 @@ def params():
     response = Response(result, content_type="application/json; charset=utf-8")
     return response
     
+@app.route('/documentation')
+def api_documentation():
+    return render_template('api_documentation.html')
