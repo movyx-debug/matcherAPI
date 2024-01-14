@@ -27,6 +27,14 @@ def index():
     response = Response(json_data, content_type="application/json; charset=utf-8")
     return response
 
+@app.route('/befundpreis')
+@require_apikey
+def befundpreis():
+    # url = /?name=asdqwe&goae=4567
+    befundpreis = request.args.get('befundpreis', default=None, type=str)
+    leistungen = request.args.get('leistungen', default=None, type=str)
+    return None
+
 @app.route('/params')
 @require_apikey
 def params():
@@ -35,6 +43,7 @@ def params():
     
     # Erstellen der Response mit dem korrekten Content-Type und Charset
     response = Response(result, content_type="application/json; charset=utf-8")
+    response.headers["Access-Control-Allow-Origin"] = "*"
     return response
     
 @app.route('/documentation')

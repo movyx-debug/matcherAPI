@@ -17,6 +17,26 @@ def get_ParameterMatrix():
     ParameterMatrix = pd.read_sql("SELECT * from parameterMatrix", con=engine)
     return ParameterMatrix
 
+# Dataframe beinhaltet alle Befundpreise aus der Datenbank
+def get_Befundpreise():
+    Befundpreise = pd.read_sql(text("""
+    SELECT
+        pb.ID,
+        pb.ParameterID,
+        pb.PpBReagenz,
+        pb.PpBKontrollen,
+        pb.AnbieterID,
+        pl.AuftraggeberID,
+        pb.GeraeteID,
+        pl.Angebotsdatum,
+        pb.Leistungen
+    FROM
+        projektBefundpreise pb
+    JOIN
+        projektListe pl ON pb.ProjektID = pl.ID
+    """), con=engine)
+    return Befundpreise
+
 #caching der Datenbankabfragen --> wird neugeladen wenn "is_data_updated() True ergibt"
 @lru_cache(maxsize=None)
 def get_cached_parameterListeTest():
