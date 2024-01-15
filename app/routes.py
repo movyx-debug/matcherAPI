@@ -43,7 +43,6 @@ def params():
     
     # Erstellen der Response mit dem korrekten Content-Type und Charset
     response = Response(result, content_type="application/json; charset=utf-8")
-    response.headers["Access-Control-Allow-Origin"] = "*"
     return response
     
 @app.route('/documentation')

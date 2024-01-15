@@ -1,11 +1,12 @@
 from flask import Flask
 import os
+from flask_cors import CORS
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-
+CORS(app)
 
 API_KEY = os.environ.get('MY_API_KEY')
 basedir = os.path.abspath(os.path.dirname(__file__))
