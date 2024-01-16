@@ -91,7 +91,7 @@ def get_BefundpreisInfo(parameterID, leistungen):
     df_BP["GeraeteID"] = df_BP["GeraeteID"].map(df_geraete["Geraetebezeichnung"])
     df_BP["PpB"] = df_BP["PpBReagenz"] + df_BP["PpBKontrollen"]
     df_BP["Jahr"] = df_BP['Angebotsdatum'].str[:4]
-    df_BP["Monat"] = df_BP['Angebotsdatum'].str[:-2]
+    df_BP["Monat"] = df_BP['Angebotsdatum'].str[-2:]
 
     return df_BP
 
