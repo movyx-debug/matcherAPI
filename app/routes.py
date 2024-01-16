@@ -2,7 +2,7 @@ import json
 from flask import Response, render_template, request, abort
 from functools import wraps
 from app import app, API_KEY
-from app.funtions import check_for_database_reload, get_cached_parameterListeTest, matchRating
+from app.funtions import check_for_database_reload, get_BefundpreisInfo, get_cached_parameterListeTest, matchRating
 
 def require_apikey(view_function):
     @wraps(view_function)
@@ -30,10 +30,18 @@ def index():
 @app.route('/befundpreis')
 @require_apikey
 def befundpreis():
-    # url = /?name=asdqwe&goae=4567
-    befundpreis = request.args.get('befundpreis', default=None, type=str)
-    leistungen = request.args.get('leistungen', default=None, type=str)
-    return None
+    # url = /?parameterID=asdqwe&leistungen=4567
+    print("1111111111111111111111111111111111111111111111111111111111")
+    parameterID = request.args.get('parameterID', default=None, type=int)
+    leistungen = request.args.get('leistungen', default=None, type=float)
+    print("222222222222222222222222222222222222222222222222222222222")
+    print("parameterID: ", parameterID, type(parameterID))
+
+    result = get_BefundpreisInfo(parameterID, leistungen).to_json(orient='records')
+    # Erstellen der Response mit dem korrekten Content-Type und Charset
+    response = Response(result, content_type="application/json; charset=utf-8")
+    
+    return response
 
 @app.route('/params')
 @require_apikey

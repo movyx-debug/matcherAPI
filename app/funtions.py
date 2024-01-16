@@ -17,7 +17,7 @@ def get_ParameterMatrix():
     ParameterMatrix = pd.read_sql("SELECT * from parameterMatrix", con=engine)
     return ParameterMatrix
 
-# Dataframe beinhaltet alle Befundpreise aus der Datenbank
+# Dataframe beinhaltet alle Befundpreise aus der Datenbank. Anbieter, Auftraggeber und Geräte werden nur als ID gespeichert (Cache)
 def get_Befundpreise():
     Befundpreise = pd.read_sql(text("""
     SELECT
@@ -37,6 +37,73 @@ def get_Befundpreise():
     """), con=engine)
     return Befundpreise
 
+def get_Anbieter():
+    Anbieter = pd.read_sql("SELECT * from projektAnbieter", con=engine)
+    return Anbieter
+
+def get_Auftraggeber():
+    Auftraggeber = pd.read_sql("SELECT * from projektAuftraggeber", con=engine)
+    return Auftraggeber
+
+def get_Geraete():
+    Geraete = pd.read_sql("SELECT * from geraeteListe", con=engine)
+    return Geraete
+
+@lru_cache(maxsize=None)
+def get_cached_Befundpreise():
+    return get_Befundpreise()
+
+@lru_cache(maxsize=None)
+def get_cached_Anbieter():
+    return get_Anbieter()
+
+@lru_cache(maxsize=None)
+def get_cached_Auftraggeber():
+    return get_Auftraggeber()
+
+@lru_cache(maxsize=None)
+def get_cached_Geraete():
+    return get_Geraete()
+
+def get_BefundpreisInfo(parameterID, leistungen):
+
+    check_for_database_reload_BP()
+
+    df_BP_all = get_cached_Befundpreise()
+    df_BP = df_BP_all[df_BP_all["ParameterID"] == parameterID].copy()
+
+    df_anbieter_raw = get_cached_Anbieter()
+    df_anbieter = df_anbieter_raw.set_index("ID")
+
+    df_auftraggeber_raw = get_cached_Auftraggeber()
+    df_auftraggeber = df_auftraggeber_raw.set_index("ID")
+
+    df_geraete_raw = get_cached_Geraete()
+    df_geraete = df_geraete_raw.set_index("ID")
+
+    # Ersetzen der 'AnbieterID' in df_BP
+    df_BP["AnbieterID"] = df_BP["AnbieterID"].map(df_anbieter["Anbieter"])
+
+    # Ersetzen der 'AuftraggeberID' in df_BP
+    df_BP["AuftraggeberID"] = df_BP["AuftraggeberID"].map(df_auftraggeber["Auftraggeber"])
+
+    # Ersetzen der 'GeräteID' in df_BP
+    df_BP["GeraeteID"] = df_BP["GeraeteID"].map(df_geraete["Geraetebezeichnung"])
+
+    return df_BP
+
+def check_for_database_reload_BP():
+    if is_data_updated(table_name="projektBefundpreise", type="Befundpreise"):
+        get_cached_Befundpreise.cache_clear()  # Cache leeren
+        get_cached_Anbieter.cache_clear()  # Cache leeren
+        get_cached_Auftraggeber.cache_clear()  # Cache leeren
+        get_cached_Geraete.cache_clear()  # Cache leeren
+
+        get_cached_Befundpreise()
+        get_cached_Anbieter()
+        get_cached_Auftraggeber()
+        get_cached_Geraete()
+
 #caching der Datenbankabfragen --> wird neugeladen wenn "is_data_updated() True ergibt"
 @lru_cache(maxsize=None)
 def get_cached_parameterListeTest():
@@ -46,40 +113,41 @@ def get_cached_parameterListeTest():
 def get_cached_parameterMatrix():
     return get_ParameterMatrix()
 
-def is_data_updated():
+def is_data_updated(table_name, type):
     with engine.connect() as connection:
-        result = connection.execute(text("""
+        query = text("""
             SELECT UPDATE_TIME
             FROM   information_schema.tables
             WHERE  TABLE_SCHEMA = 'ubcdata'
-            AND    TABLE_NAME = 'parameterListeTest';
-        """))
+            AND    TABLE_NAME = :table_name;
+        """)
+        result = connection.execute(query, {"table_name": table_name})
         update_time = result.fetchone()[0]
+        
         if update_time is not None:
-            last_update_time = load_last_check_timestamp()
+            last_update_time = load_last_check_timestamp(type)
             if update_time > last_update_time:
-                save_last_check_timestamp(update_time)                
+                save_last_check_timestamp(update_time, type)
                 return update_time > last_update_time
-            
             else:
                 return False
-            
         else:
             return False
 
-def save_last_check_timestamp(timestamp):
-    with open("timestamp.txt", "w") as file:
+
+def save_last_check_timestamp(timestamp, type):
+    with open("timestamp"+type+".txt", "w") as file:
         file.write(str(timestamp))
 
-def load_last_check_timestamp():
+def load_last_check_timestamp(type):
     try:
-        with open("timestamp.txt", "r") as file:
+        with open("timestamp"+type+".txt", "r") as file:
             return datetime.fromisoformat(file.read())
     except FileNotFoundError:
         return datetime.fromisoformat("2023-04-05T15:42:00.123456")
     
 def check_for_database_reload():
-    if is_data_updated():
+    if is_data_updated(table_name="parameterListeTest", type="parameterListe"):
         get_cached_parameterListeTest.cache_clear()  # Cache leeren
         get_cached_parameterMatrix.cache_clear()  # Cache leeren
 
