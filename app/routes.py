@@ -31,11 +31,9 @@ def index():
 @require_apikey
 def befundpreis():
     # url = /?parameterID=asdqwe&leistungen=4567
-    print("1111111111111111111111111111111111111111111111111111111111")
+
     parameterID = request.args.get('parameterID', default=None, type=int)
     leistungen = request.args.get('leistungen', default=None, type=float)
-    print("222222222222222222222222222222222222222222222222222222222")
-    print("parameterID: ", parameterID, type(parameterID))
 
     result = get_BefundpreisInfo(parameterID, leistungen).to_json(orient='records')
     # Erstellen der Response mit dem korrekten Content-Type und Charset
