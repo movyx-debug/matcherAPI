@@ -383,7 +383,7 @@ def matchRating(name, goae):
                 clean_mainNameLower_list.remove(value)
 
         #2 beta (Strings für Synonyme)
-        synonyms_list = score_Df.at[index,"Synonyme2"].lower().split(",") # List of synonyms
+        synonyms_list = score_Df.at[index,"Synonyme"].lower().split(",") # List of synonyms
         for value in [""]:
             while value in synonyms_list:
                 synonyms_list.remove(value)
