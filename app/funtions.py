@@ -374,7 +374,7 @@ def matchRating(name, goae):
     #--------------------Präparation-----------------------
 
         #1 alpha (Strings für mainName)
-        mainName = score_Df.at[index,"Hauptparameter2"].lower() # singleString
+        mainName = score_Df.at[index,"Hauptparameter"].lower() # singleString
         clean_mainNameLower = (re.sub('[^a-zA-Z0-9<>ßäöü]+', ';', mainName)).lower().strip()
         clean_mainNameLower_list = re.split(';', clean_mainNameLower)
 
