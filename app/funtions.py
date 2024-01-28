@@ -126,7 +126,8 @@ def is_data_updated(table_name, type):
         """)
         result = connection.execute(query, {"table_name": table_name})
         update_time = result.fetchone()[0]
-        
+        print("-----------------------------------------------")
+        print("updatetime: ", update_time)
         if update_time is not None:
             last_update_time = load_last_check_timestamp(type)
             if update_time > last_update_time:
