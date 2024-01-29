@@ -534,7 +534,7 @@ def matchRating(name, goae):
         ratingInfo["parameterID"] = parameterID
         ratingInfo["DisplayName"] = parameterDisplayName
         ratingInfo["parameterDisplayGoae"] = parameterDisplayGoae
-        ratingInfo["correctMatchPropability"] = "InWork"
+        ratingInfo["correctMatchPropability"] = "Unwahrscheinliches Match"
         ratingInfo["ratingScoreTotal"] = score_Df_sorted.at[i, "TotalRating"]
         ratingInfo["ratingScoreWithoutGoae"] = score_Df_sorted.at[i, "TotalRatingOhneGOAE"]
 
@@ -550,6 +550,36 @@ def matchRating(name, goae):
         ratingInfos.append(ratingInfo)
 
     json["output"]["ratingInfos"] = ratingInfos
+
+    #Angabe der correctMatchPropability:
+
+    # Anpassung der Logik zur Aktualisierung von correctMatchPropability mit der neuen Anforderung
+    def update_match_propability(data):
+        if data['output']['directMatchID'] is not None:
+            # Setze das erste Element auf "Direktes Match"
+            if data['output']['ratingInfos']:
+                data['output']['ratingInfos'][0]['correctMatchPropability'] = "Direktes Match"
+
+            # Setze alle anderen Elemente auf "Unwahrscheinliches Match"
+            for info in data['output']['ratingInfos'][1:]:
+                info['correctMatchPropability'] = "Unwahrscheinliches Match"
+        else:
+            # Überprüfen, ob das erste Element einen ratingScoreTotal > 0.7 hat
+            if data['output']['ratingInfos'] and data['output']['ratingInfos'][0]['ratingScoreTotal'] > 0.6:
+                first_element_score = data['output']['ratingInfos'][0]['ratingScoreTotal']
+
+                # Ermitteln der Elemente mit gleichem ratingScoreTotal wie das erste Element
+                matching_score_elements = [info for info in data['output']['ratingInfos'] if info['ratingScoreTotal'] == first_element_score]
+
+                # Aktualisierung von correctMatchPropability basierend auf dem Score
+                for info in data['output']['ratingInfos']:
+                    if info in matching_score_elements:
+                        info['correctMatchPropability'] = "Wahrscheinliches Match"
+                    else:
+                        info['correctMatchPropability'] = "Unwahrscheinliches Match"
+
+    # Aufruf der finalen Funktion mit dem (angenommenen vollständigen) Dictionary
+    update_match_propability(json)
     
     #converting type64 to INT
     def convert_int64(obj):
