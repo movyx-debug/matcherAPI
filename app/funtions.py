@@ -1,3 +1,4 @@
+from app import db
 from datetime import datetime
 import numpy as np
 from app import engine
@@ -7,6 +8,8 @@ import difflib
 import time
 from functools import lru_cache
 from sqlalchemy import text
+
+from app.models import ProjektBefundpreise, ProjektListeTest
 
 # Dataframe beinhaltet alle Parameter aus der Datenbank
 def get_ParameterListeTest():
@@ -19,22 +22,21 @@ def get_ParameterMatrix():
 
 # Dataframe beinhaltet alle Befundpreise aus der Datenbank. Anbieter, Auftraggeber und Geräte werden nur als ID gespeichert (Cache)
 def get_Befundpreise():
-    Befundpreise = pd.read_sql(text("""
-    SELECT
-        pb.ID,
-        pb.ParameterID,
-        pb.PpBReagenz,
-        pb.PpBKontrollen,
-        pb.AnbieterID,
-        pl.AuftraggeberID,
-        pb.GeraeteID,
-        pl.Angebotsdatum,
-        pb.Leistungen
-    FROM
-        projektBefundpreise pb
-    JOIN
-        projektListe pl ON pb.ProjektID = pl.ID
-    """), con=engine)
+    query = db.session.query(
+        ProjektBefundpreise.ID,
+        ProjektBefundpreise.ParameterID,
+        ProjektBefundpreise.PpBReagenz,
+        ProjektBefundpreise.PpBKontrollen,
+        ProjektBefundpreise.AnbieterID,
+        ProjektListeTest.AuftraggeberID,
+        ProjektBefundpreise.GeraeteID,
+        ProjektListeTest.Angebotsdatum,
+        ProjektBefundpreise.Leistungen
+    ).join(
+        ProjektListeTest, ProjektBefundpreise.ProjektID == ProjektListeTest.ID
+    )
+
+    Befundpreise = pd.read_sql(query.statement, db.session.bind)
     return Befundpreise
 
 def get_Anbieter():
