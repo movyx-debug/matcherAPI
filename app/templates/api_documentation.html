@@ -13,6 +13,13 @@
         .api-section {
             margin-bottom: 20px;
         }
+        .route {
+            cursor: pointer; /* Setzt den Cursor zum Fingerzeiger */
+            padding: 10px;
+            margin: 1;
+            background-color: #e7e7e7;
+            color: navy;
+        }
         .api-subsection {
             margin-bottom: 10px;
         }
@@ -52,6 +59,17 @@
             document.execCommand("copy");
             document.body.removeChild(tempInput);
         }
+
+        function toggleDescription(element) {
+            var description = element.nextElementSibling;
+            if (description.style.display === 'block') {
+                description.style.display = 'none';
+            } else {
+                description.style.display = 'block';
+            }
+        }
+        
+
     </script>
 </head>
 <body>
@@ -73,8 +91,8 @@
 
 </div>
 
-<div class="api-section">
-    <h2 class="api-subsection">Route 1: Parameter Matching</h2>
+<h2 class="route" onclick="toggleDescription(this)">Route 1: Parameter Matching</h2>
+<div style="display: none;" class="api-section">
     <h3 class="api-description">URL</h3>
     <span class="api-url">GET https://ubcmatchingapi.onrender.com/</span>
     <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/')">Copy</button>
@@ -114,8 +132,9 @@
         }
     </div>
 </div>
-<div class="api-section">
-    <h2 class="api-subsection">Route 2: Abrufen aller Parameter</h2>
+
+<h2 class="route" onclick="toggleDescription(this)">Route 2: Abrufen aller Parameter</h2>
+<div style="display: none;" class="api-section">
     <h3 class="api-description">URL</h3>
     <span class="api-url">GET https://ubcmatchingapi.onrender.com/params</span>
     <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/params')">Copy</button>
@@ -150,8 +169,8 @@
 </div>
 </div>
 
-<div class="api-section">
-    <h2 class="api-subsection">Route 6: Abrufen der Projektliste</h2>
+<h2 class="route" onclick="toggleDescription(this)">Route 3: Abrufen der Projektliste</h2>
+<div style="display: none;" class="api-section">
     <h3 class="api-description">URL</h3>
     <span class="api-url">GET https://ubcmatchingapi.onrender.com/projekte</span>
     <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/projekte')">Copy</button>
@@ -191,8 +210,91 @@
     </div>
 </div>
 
-<div class="api-section">
-    <h2 class="api-subsection">Route 3: Neues Projekt hinzufügen</h2>
+<h2 class="route" onclick="toggleDescription(this)">Route 4: Abrufen aller Materialien</h2>
+<div style="display: none;" class="api-section">
+    <h3 class="api-description">URL</h3>
+    <span class="api-url">GET https://ubcmatchingapi.onrender.com/materials</span>
+    <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/materials')">Copy</button>
+
+    <h3 class="api-description">Beschreibung</h3>
+    <p>Listet alle Materialien auf, die in der Datenbank gespeichert sind. Jedes Material wird mit seinem einzigartigen Namen angezeigt.</p>
+
+    <h3 class="api-description">Benötigte Header</h3>
+    <p>X-API-KEY: IhrAPIKey</p>
+
+    <h3 class="api-description">Response-Struktur</h3>
+    <div class="api-json">
+        Ein JSON-Array, in dem jedes Objekt ein Material repräsentiert.
+    </div>
+
+    <h3 class="api-description">Response-Beispiel</h3>
+    <div class="api-json">
+<pre>[
+    {"Material": "Blut"},
+    {"Material": "Urin"},
+    {"Material": "Gewebe"}
+]</pre>
+    </div>
+</div>
+
+<h2 class="route" onclick="toggleDescription(this)">Route 5: Abrufen aller Anbieter</h2>
+<div style="display: none;" class="api-section">
+    <h3 class="api-description">URL</h3>
+    <span class="api-url">GET https://ubcmatchingapi.onrender.com/anbieter</span>
+    <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/anbieter')">Copy</button>
+
+    <h3 class="api-description">Beschreibung</h3>
+    <p>Listet alle Anbieter auf, die in der Datenbank gespeichert sind. Jeder Anbieter wird mit seinem Namen dargestellt.</p>
+
+    <h3 class="api-description">Benötigte Header</h3>
+    <p>X-API-KEY: IhrAPIKey</p>
+
+    <h3 class="api-description">Response-Struktur</h3>
+    <div class="api-json">
+        Ein JSON-Array, in dem jedes Objekt einen Anbieter repräsentiert.
+    </div>
+
+    <h3 class="api-description">Response-Beispiel</h3>
+    <div class="api-json">
+<pre>[
+    {"Anbieter": "LabTech AG"},
+    {"Anbieter": "BioTest GmbH"},
+    {"Anbieter": "MediLab Corp"}
+]</pre>
+    </div>
+</div>
+
+<h2 class="route" onclick="toggleDescription(this)">Route 6: Abrufen aller Auftraggeber</h2>
+<div style="display: none;" class="api-section">
+    <h3 class="api-description">URL</h3>
+    <span class="api-url">GET https://ubcmatchingapi.onrender.com/auftraggeber</span>
+    <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/auftraggeber')">Copy</button>
+
+    <h3 class="api-description">Beschreibung</h3>
+    <p>Listet alle Auftraggeber auf, die in der Datenbank gespeichert sind. Jeder Auftraggeber wird mit seinem Namen angezeigt.</p>
+
+    <h3 class="api-description">Benötigte Header</h3>
+    <p>X-API-KEY: IhrAPIKey</p>
+
+    <h3 class="api-description">Response-Struktur</h3>
+    <div class="api-json">
+        Ein JSON-Array, in dem jedes Objekt einen Auftraggeber repräsentiert.
+    </div>
+
+    <h3 class="api-description">Response-Beispiel</h3>
+    <div class="api-json">
+<pre>[
+    {"Auftraggeber": "Max Mustermann GmbH"},
+    {"Auftraggeber": "Schmidt Kliniken AG"},
+    {"Auftraggeber": "Allgemeine Medizin e.V."}
+]</pre>
+    </div>
+</div>
+
+
+
+<h2 class="route" onclick="toggleDescription(this)">Route 7: Neues Projekt hinzufügen</h2>
+<div style="display: none;" class="api-section">
     <h3 class="api-description">URL</h3>
     <span class="api-url">POST https://ubcmatchingapi.onrender.com/createProjekt</span>
     <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/createProjekt')">Copy</button>
@@ -231,8 +333,8 @@
     </div>
 </div>
 
-<div class="api-section">
-    <h2 class="api-subsection">Route 4: Befundpreise zu einem Projekt hinzufügen</h2>
+<h2 class="route" onclick="toggleDescription(this)">Route 8: Befundpreise zu einem Projekt hinzufügen</h2>
+<div style="display: none;" class="api-section">
     <h3 class="api-description">URL</h3>
     <span class="api-url">POST https://ubcmatchingapi.onrender.com/createBefundpreise</span>
     <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/createBefundpreise')">Copy</button>
@@ -274,8 +376,8 @@
     </div>
 </div>
 
-<div class="api-section">
-    <h2 class="api-subsection">Route 5: Neuen Parameter hinzufügen</h2>
+<h2 class="route" onclick="toggleDescription(this)">Route 9: Neuen Parameter hinzufügen</h2>
+<div style="display: none;" class="api-section">
     <h3 class="api-description">URL</h3>
     <span class="api-url">POST https://ubcmatchingapi.onrender.com/createParam</span>
     <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/createParam')">Copy</button>
@@ -315,8 +417,6 @@
 }</pre>
     </div>
 </div>
-
-
 
 
 </body>
