@@ -9,7 +9,7 @@ import time
 from functools import lru_cache
 from sqlalchemy import text
 
-from app.models import ProjektBefundpreise, ProjektListeTest
+from app.models import ProjektBefundpreiseTest, ProjektListeTest
 
 # Dataframe beinhaltet alle Parameter aus der Datenbank
 def get_ParameterListeTest():
@@ -23,17 +23,16 @@ def get_ParameterMatrix():
 # Dataframe beinhaltet alle Befundpreise aus der Datenbank. Anbieter, Auftraggeber und Geräte werden nur als ID gespeichert (Cache)
 def get_Befundpreise():
     query = db.session.query(
-        ProjektBefundpreise.ID,
-        ProjektBefundpreise.ParameterID,
-        ProjektBefundpreise.PpBReagenz,
-        ProjektBefundpreise.PpBKontrollen,
-        ProjektBefundpreise.AnbieterID,
+        ProjektBefundpreiseTest.ID,
+        ProjektBefundpreiseTest.ParameterID,
+        ProjektBefundpreiseTest.PpBReagenz,
+        ProjektBefundpreiseTest.PpBKontrollen,
+        ProjektBefundpreiseTest.AnbieterID,
         ProjektListeTest.AuftraggeberID,
-        ProjektBefundpreise.GeraeteID,
         ProjektListeTest.Angebotsdatum,
-        ProjektBefundpreise.Leistungen
+        ProjektBefundpreiseTest.Leistungen
     ).join(
-        ProjektListeTest, ProjektBefundpreise.ProjektID == ProjektListeTest.ID
+        ProjektListeTest, ProjektBefundpreiseTest.ProjektID == ProjektListeTest.ID
     )
 
     # Umwandlung der Abfrage in einen SQL-String
@@ -51,10 +50,6 @@ def get_Auftraggeber():
     Auftraggeber = pd.read_sql("SELECT * from projektAuftraggeber", con=engine)
     return Auftraggeber
 
-def get_Geraete():
-    Geraete = pd.read_sql("SELECT * from geraeteListe", con=engine)
-    return Geraete
-
 @lru_cache(maxsize=None)
 def get_cached_Befundpreise():
     return get_Befundpreise()
@@ -66,10 +61,6 @@ def get_cached_Anbieter():
 @lru_cache(maxsize=None)
 def get_cached_Auftraggeber():
     return get_Auftraggeber()
-
-@lru_cache(maxsize=None)
-def get_cached_Geraete():
-    return get_Geraete()
 
 def get_BefundpreisInfo(parameterID, leistungen):
 
@@ -84,17 +75,13 @@ def get_BefundpreisInfo(parameterID, leistungen):
     df_auftraggeber_raw = get_cached_Auftraggeber()
     df_auftraggeber = df_auftraggeber_raw.set_index("ID")
 
-    df_geraete_raw = get_cached_Geraete()
-    df_geraete = df_geraete_raw.set_index("ID")
-
     # Ersetzen der 'AnbieterID' in df_BP
     df_BP["AnbieterID"] = df_BP["AnbieterID"].map(df_anbieter["Anbieter"])
 
     # Ersetzen der 'AuftraggeberID' in df_BP
     df_BP["AuftraggeberID"] = df_BP["AuftraggeberID"].map(df_auftraggeber["Auftraggeber"])
 
-    # Ersetzen der 'GeräteID' in df_BP
-    df_BP["GeraeteID"] = df_BP["GeraeteID"].map(df_geraete["Geraetebezeichnung"])
+    # 
     df_BP["PpB"] = df_BP["PpBReagenz"] + df_BP["PpBKontrollen"]
     df_BP["Jahr"] = df_BP['Angebotsdatum'].str[:4]
     df_BP["Monat"] = df_BP['Angebotsdatum'].str[-2:]
@@ -102,16 +89,14 @@ def get_BefundpreisInfo(parameterID, leistungen):
     return df_BP
 
 def check_for_database_reload_BP():
-    if is_data_updated(table_name="projektBefundpreise", type="Befundpreise"):
+    if is_data_updated(table_name="projektBefundpreiseTest", type="Befundpreise"):
         get_cached_Befundpreise.cache_clear()  # Cache leeren
         get_cached_Anbieter.cache_clear()  # Cache leeren
         get_cached_Auftraggeber.cache_clear()  # Cache leeren
-        get_cached_Geraete.cache_clear()  # Cache leeren
 
         get_cached_Befundpreise()
         get_cached_Anbieter()
         get_cached_Auftraggeber()
-        get_cached_Geraete()
 
 #caching der Datenbankabfragen --> wird neugeladen wenn "is_data_updated() True ergibt"
 @lru_cache(maxsize=None)

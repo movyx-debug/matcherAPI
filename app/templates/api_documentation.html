@@ -39,6 +39,9 @@
             border: none;
             color: black;
         }
+        .api1 {
+            background-color: blanchedalmond;
+        }
     </style>
     <script>
         function copyToClipboard(text) {
@@ -64,6 +67,10 @@
     <h2>Basis-URL</h2>
     <span class="api-url">https://ubcmatchingapi.onrender.com/</span>
     <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/')">Copy</button>
+</div >
+
+<div class="api1">
+
 </div>
 
 <div class="api-section">
@@ -142,5 +149,175 @@
     ]
 </div>
 </div>
+
+<div class="api-section">
+    <h2 class="api-subsection">Route 6: Abrufen der Projektliste</h2>
+    <h3 class="api-description">URL</h3>
+    <span class="api-url">GET https://ubcmatchingapi.onrender.com/projekte</span>
+    <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/projekte')">Copy</button>
+
+    <h3 class="api-description">Beschreibung</h3>
+    <p>Gibt eine Liste aller Projekte zurück. Jedes Projekt wird mit Details wie Projekt-ID, Auftrags-ID, Angebotsdatum, Standort, Bemerkung, Zeitstempel sowie Informationen über den Auftraggeber und Anbieter dargestellt.</p>
+
+    <h3 class="api-description">Benötigte Header</h3>
+    <p>X-API-KEY: IhrAPIKey</p>
+
+    <h3 class="api-description">Response-Struktur</h3>
+    <div class="api-json">
+        Ein JSON-Array, in dem jedes Objekt ein Projekt mit seinen Details repräsentiert. Jedes Objekt enthält Felder wie <strong>ID</strong>, <strong>AuftragsID</strong>, <strong>Angebotsdatum</strong>, <strong>Standort</strong>, <strong>Bemerkung</strong>, <strong>Zeitstempel</strong>, und verknüpfte Daten für <strong>Auftraggeber</strong> und <strong>Anbieter</strong>.
+    </div>
+
+    <h3 class="api-description">Response-Beispiel</h3>
+    <div class="api-json">
+<pre>[
+    {
+        "ID": 1,
+        "AuftragsID": "12345",
+        "Angebotsdatum": "2023-01",
+        "Standort": "Berlin",
+        "Bemerkung": "Erstes Projekt",
+        "Zeitstempel": "2023-01-01T12:00:00",
+        "Auftraggeber": {
+            "ID": 1,
+            "Auftraggeber": "Max Mustermann GmbH"
+        },
+        "Anbieter": {
+            "ID": 2,
+            "Anbieter": "LabTech AG"
+        }
+    },
+    // Weitere Projekte...
+]</pre>
+    </div>
+</div>
+
+<div class="api-section">
+    <h2 class="api-subsection">Route 3: Neues Projekt hinzufügen</h2>
+    <h3 class="api-description">URL</h3>
+    <span class="api-url">POST https://ubcmatchingapi.onrender.com/createProjekt</span>
+    <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/createProjekt')">Copy</button>
+
+    <h3 class="api-description">Beschreibung</h3>
+    <p>Ermöglicht das Erstellen eines neuen Projekts mit spezifischen Details wie AuftragsID, Angebotsdatum, Auftraggeber, Anbieter, Standort und Bemerkung. Sowohl Auftraggeber als auch Anbieter werden überprüft und bei Bedarf neu angelegt.</p>
+
+    <h3 class="api-description">Benötigte Header</h3>
+    <p>X-API-KEY: IhrAPIKey</p>
+
+    <h3 class="api-description">Body-Beispiel (application/x-www-form-urlencoded)</h3>
+    <div class="api-json">
+        AuftragsID=12345&amp;Angebotsdatum=2023-01&amp;Auftraggeber=Max Mustermann GmbH&amp;Anbieter=LabTech AG&amp;Standort=Berlin&amp;Bemerkung=Erstes Angebot
+    </div>
+
+    <h3 class="api-description">Response-Struktur</h3>
+    <div class="api-json">
+        Ein JSON-Objekt mit einer Bestätigungsmeldung und Details zum neu hinzugefügten Projekt.
+    </div>
+
+    <h3 class="api-description">Response-Beispiel</h3>
+    <div class="api-json">
+        {
+            "meldung": "Projekt erfolgreich hinzugefügt",
+            "projekt": {
+                "ProjektID": "neueProjektID",
+                "AuftragsID": "12345",
+                "AuftraggeberID": "neueAuftraggeberID",
+                "AnbieterID": "neueAnbieterID",
+                "Angebotsdatum": "2023-01",
+                "Standort": "Berlin",
+                "Bemerkung": "Erstes Angebot",
+                "Zeitstempel": "2023-01-01T12:00:00"
+            }
+        }
+    </div>
+</div>
+
+<div class="api-section">
+    <h2 class="api-subsection">Route 4: Befundpreise zu einem Projekt hinzufügen</h2>
+    <h3 class="api-description">URL</h3>
+    <span class="api-url">POST https://ubcmatchingapi.onrender.com/createBefundpreise</span>
+    <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/createBefundpreise')">Copy</button>
+
+    <h3 class="api-description">Beschreibung</h3>
+    <p>Ermöglicht das Hinzufügen von Befundpreisen zu einem bestehenden Projekt unter Verwendung einer spezifischen JSON-Struktur. Dieser Endpoint erwartet eine ProjektID und eine Liste von Daten, die ParameterID, Leistungen, PpBReagenz und PpBKontrollen enthalten.</p>
+
+    <h3 class="api-description">Benötigte Header</h3>
+    <p>X-API-KEY: IhrAPIKey</p>
+    <p>Content-Type: application/json</p>
+
+    <h3 class="api-description">Body-Beispiel (application/json)</h3>
+    <div class="api-json">
+<pre>{
+    "ProjektID": "123",
+    "Data": [
+        {"parameterID": "1", "Leistungen": 100, "PpBReagenz": "10.00", "PpBKontrollen": "5.00"},
+        {"parameterID": "2", "Leistungen": 150, "PpBReagenz": "15.00", "PpBKontrollen": "7.50"}
+    ]
+}</pre>
+    </div>
+
+    <h3 class="api-description">Response-Struktur</h3>
+    <div class="api-json">
+        Ein JSON-Objekt mit einer Bestätigungsmeldung über den Erfolg oder Misserfolg der Operation.
+    </div>
+
+    <h3 class="api-description">Response-Beispiel</h3>
+    <div class="api-json">
+<pre>{
+    "meldung": "Daten erfolgreich gespeichert"
+}</pre>
+    </div>
+    <div class="api-json" style="color: red;">
+<pre>{
+    "fehler": "Daten konnten nicht gespeichert werden",
+    "details": "Fehlerdetails hier..."
+}</pre>
+    </div>
+</div>
+
+<div class="api-section">
+    <h2 class="api-subsection">Route 5: Neuen Parameter hinzufügen</h2>
+    <h3 class="api-description">URL</h3>
+    <span class="api-url">POST https://ubcmatchingapi.onrender.com/createParam</span>
+    <button class="copy-button" onclick="copyToClipboard('https://ubcmatchingapi.onrender.com/createParam')">Copy</button>
+
+    <h3 class="api-description">Beschreibung</h3>
+    <p>Ermöglicht das Hinzufügen eines neuen Parameters zur Parameterliste. Überprüft, ob der Parameter bereits existiert, und fügt ihn hinzu, wenn er nicht vorhanden ist.</p>
+
+    <h3 class="api-description">Benötigte Header</h3>
+    <p>X-API-KEY: IhrAPIKey</p>
+    <p>Content-Type: application/x-www-form-urlencoded</p>
+
+    <h3 class="api-description">Body-Beispiel (application/x-www-form-urlencoded)</h3>
+    <div class="api-json">
+        Name=Glucose&amp;Material=Blut&amp;goae=1234&amp;Punkte=100&amp;Hauptparameter=Glukose&amp;Synonyme=Glukose, Dextrose&amp;Parameterzusatz=Fasten
+    </div>
+
+    <h3 class="api-description">Response-Struktur</h3>
+    <div class="api-json">
+        Ein JSON-Objekt mit einer Bestätigungsmeldung über den Erfolg der Operation und dem Namen des hinzugefügten Parameters.
+    </div>
+
+    <h3 class="api-description">Response-Beispiel</h3>
+    <div class="api-json">
+<pre>{
+    "meldung": "Parameter erfolgreich hinzugefügt",
+    "Parameter": "Glucose"
+}</pre>
+    </div>
+    <div class="api-json" style="color: red;">
+<pre>{
+    "meldung": "Parameter existiert bereits"
+}</pre>
+    </div>
+    <div class="api-json" style="color: red;">
+<pre>{
+    "meldung": "Material nicht in der Datenbank vorhanden"
+}</pre>
+    </div>
+</div>
+
+
+
+
 </body>
 </html>

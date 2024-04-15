@@ -31,6 +31,11 @@ class ParameterMaterial(db.Model):
     ID = db.Column(db.Integer, primary_key=True)
     Material = db.Column(db.String(60), nullable=False, unique=True)
 
+    def to_dict(self):
+        return {
+            "Material": self.Material
+        }
+
 class ParameterMethoden(db.Model):
     __tablename__ = 'parameterMethoden'
     ID = db.Column(db.Integer, primary_key=True)
@@ -46,21 +51,49 @@ class ProjektListeTest(db.Model):
     AnbieterID = db.Column(db.Integer, db.ForeignKey('projektAnbieter.ID'), nullable=False)
     Standort = db.Column(db.String(30), nullable=False)
     Bemerkung = db.Column(db.String(40), nullable=False)
-    Zeitstempel = db.Column(db.TIMESTAMP, nullable=False)
+    Zeitstempel = db.Column(db.TIMESTAMP)
 
     # Beziehungen zu anderen Tabellen
     Auftraggeber = db.relationship("ProjektAuftraggeber", backref='projektListeTest')
     Anbieter = db.relationship("ProjektAnbieter", backref='projektListeTest')
+    projektBefundpreise = db.relationship('ProjektBefundpreiseTest', backref='ProjektListeTest')
+
+    def to_dict(self):
+        return {
+            'ID': self.ID,
+            'AuftragsID': self.AuftragsID,
+            'Angebotsdatum': self.Angebotsdatum,
+            'Standort': self.Standort,
+            'Bemerkung': self.Bemerkung,
+            'Zeitstempel': self.Zeitstempel,  # Zeitstempel in String konvertieren
+            'Auftraggeber': {
+                'ID': self.Auftraggeber.ID,
+                'Auftraggeber': self.Auftraggeber.Auftraggeber
+            } if self.Auftraggeber else {},  # Verknüpfte Daten von Auftraggeber
+            'Anbieter': {
+                'ID': self.Anbieter.ID,
+                'Anbieter': self.Anbieter.Anbieter
+            } if self.Anbieter else {},  # Verknüpfte Daten von Anbieter
+            'Befundmengen': sum(befundpreis.Leistungen for befundpreis in self.projektBefundpreise)
+        }
 
 class ProjektAuftraggeber(db.Model):
     __tablename__ = 'projektAuftraggeber'
     ID = db.Column(db.Integer, primary_key=True)
     Auftraggeber = db.Column(db.String(60), nullable=False , unique=True)
+    def to_dict(self):
+        return {
+            "Auftraggeber": self.Auftraggeber
+        }
 
 class ProjektAnbieter(db.Model):
     __tablename__ = 'projektAnbieter'
     ID = db.Column(db.Integer, primary_key=True)
     Anbieter = db.Column(db.String(60), nullable=False, unique=True)
+    def to_dict(self):
+        return {
+            "Anbieter": self.Anbieter
+        }
 
 class GeraeteListe(db.Model):
     __tablename__ = 'geraeteListe'
@@ -80,23 +113,20 @@ class GeraeteVertreiber(db.Model):
     ID = db.Column(db.Integer, primary_key=True)
     Vertreiber = db.Column(db.String(60), nullable=False , unique=True)
 
-class ProjektBefundpreise(db.Model):
-    __tablename__ = 'projektBefundpreise'
+class ProjektBefundpreiseTest(db.Model):
+    __tablename__ = 'projektBefundpreiseTest'
 
     ID = db.Column(db.Integer, primary_key=True)
     ProjektID = db.Column(db.Integer, db.ForeignKey('projektListeTest.ID'), nullable=False)
     AnbieterID = db.Column(db.Integer, db.ForeignKey('projektAnbieter.ID'), nullable=False)
     ParameterID = db.Column(db.Integer, db.ForeignKey('parameterListeTest.ID'), nullable=False)
-    GeraeteID = db.Column(db.Integer, db.ForeignKey('geraeteListe.ID'), nullable=False)
-    LASAnbindung = db.Column(db.Integer, nullable=False)
     Leistungen = db.Column(db.Integer, nullable=False)
     PpBReagenz = db.Column(db.Float, nullable=False)
     PpBKontrollen = db.Column(db.Float, nullable=False)
     Zeitstempel = db.Column(db.TIMESTAMP, nullable=False)
 
     # Beziehungen zu anderen Tabellen
-    Projekt = db.relationship('ProjektListeTest', backref='projektBefundpreise')
-    Anbieter = db.relationship('ProjektAnbieter', backref='projektBefundpreise')
-    Parameter = db.relationship('ParameterListeTest', backref='projektBefundpreise')
-    Geraete = db.relationship('GeraeteListe', backref='projektBefundpreise')
+    Projekt = db.relationship('ProjektListeTest', backref='projektBefundpreiseTest')
+    Anbieter = db.relationship('ProjektAnbieter', backref='projektBefundpreiseTest')
+    Parameter = db.relationship('ParameterListeTest', backref='projektBefundpreiseTest')
 
