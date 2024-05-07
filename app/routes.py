@@ -25,7 +25,6 @@ def index():
     name = request.args.get('name', default=None, type=str)
     goae = request.args.get('goae', default=None, type=str)
     result = matchRating(name, goae)
-
     json_data = json.dumps(result, ensure_ascii=False).encode('utf-8')
     
     # Erstellen der Response mit dem korrekten Content-Type und Charset
@@ -55,7 +54,6 @@ def params():
     # Erstellen der Response mit dem korrekten Content-Type und Charset
     response = Response(result, content_type="application/json; charset=utf-8")
     return response
-
 
 @app.route('/projekte')
 @require_apikey

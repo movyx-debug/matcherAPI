@@ -330,6 +330,7 @@ def matchRating(name, goae):
     #Direct-Match
 
     direct_match_result = directmatchDF[directmatchDF["DirektMatch"] == parameter["direct_match_string"]]
+
     if not direct_match_result.empty:
         direct_match = direct_match_result['ParameterID'].values[0]
     else:
@@ -486,10 +487,15 @@ def matchRating(name, goae):
     score_Df["TotalRatingOhneGOAE"] = score_Df["ratingscore_alpha_mainName"] + score_Df["ratingscore_beta_synonym"] + score_Df["ratingscore_delta_nameAddon"] + score_Df["ratingscore_epsilon_material"]
     score_Df["TotalRating"] = score_Df["ratingscore_alpha_mainName"] + score_Df["ratingscore_beta_synonym"] + score_Df["ratingscore_delta_nameAddon"] + score_Df["ratingscore_epsilon_material"] + score_Df["ratingscore_gamma_goae"]
 
+    #Wenn Parameter dem Direktmatch entspricht, bekommt die Spalte "IsDirectMatch" den Wert true, hiernach wird als erstes Sortiert im nächsten Abschnitt Sorting
+
+    score_Df["IsDirectMatch"] = (df['ID'] == direct_match)
+
     #--------------------Sorting-----------------------
-    #Sortieren des Dataframes nach (1) TotalRating & (2) RatcliffSimilarity
-    score_Df_sorted=score_Df.sort_values(by=["TotalRating", "RatcliffSimilarity"], ascending=False)
+    #Sortieren des Dataframes nach (1) IsDirectMatch & (2) TotalRating (3) RatcliffSimilarity
+    score_Df_sorted=score_Df.sort_values(by=["IsDirectMatch","TotalRating", "RatcliffSimilarity"], ascending=False)
     score_Df_sorted = score_Df_sorted.reset_index(drop=True)
+
 
     #--------------------Return/output-----------------------
     #Grundgerüst für return/output
